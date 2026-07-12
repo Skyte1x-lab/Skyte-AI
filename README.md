@@ -6,12 +6,17 @@ Dein persönlicher KI-Assistent im Jarvis-Stil — mit Claude-inspiriertem Inter
 
 ## Funktionen
 
-- 💬 **Chat** — schreibe oder **sprich** mit Skyte AI (Mikrofon-Button)
+- 💬 **Chat** — schreibe oder **sprich** mit Skyte AI (Mikrofon-Button), inkl. animiertem Skyte-Orb
 - 🔊 **Sprachausgabe** — Antworten werden auf Wunsch vorgelesen
 - 🎯 **Ziele** — sag einfach „Mein Ziel ist …" und es landet im Dashboard
-- 🗂️ **Plan-Board** — Pläne mit Status *Geplant / In Arbeit / Fertig* („Plane Einkaufen am Samstag", „Einkaufen ist fertig")
+- 🗂️ **Plan-Board** — Pläne mit Status *Geplant / In Arbeit / Fertig*, **Priorität** (Niedrig/Mittel/Hoch) und optionalem **Fälligkeitsdatum** — überfällige Pläne werden rot markiert
+- 📝 **Notizen** — freie Notizen per Chat („Notiere: …") oder manuell im Dashboard
+- ⏰ **Erinnerungen** — mit Datum/Uhrzeit, chronologisch sortiert, überfällige rot markiert
+- ⏱️ **Fokus-Timer** — Pomodoro-Stil mit Presets, Signalton und optionaler Sprachansage bei Ablauf
+- 🧠 **KI-Übersicht** — Kennzahlen-Kacheln im Dashboard (Ziele, Pläne, Notizen, Erinnerungen, Timer-Status)
+- 🌗 **Hell-/Dunkelmodus** — manuell umschaltbar (Kopfzeile), Einstellung bleibt gespeichert
 - 🌐 **Deutsch ⇄ Englisch** umschaltbar (Kopfzeile oder Einstellungen)
-- 🧠 **Demo-Modus ohne Kosten** — funktioniert sofort ohne API-Key; mit Anthropic API-Key antwortet der echte Claude und verwaltet dein Dashboard selbstständig
+- 🧠 **Demo-Modus ohne Kosten** — funktioniert sofort ohne API-Key; mit Anthropic API-Key antwortet der echte Claude und verwaltet dein gesamtes Dashboard selbstständig
 - 💾 Alle Daten bleiben **lokal in deinem Browser** (localStorage)
 
 ## Schnellstart
@@ -40,11 +45,15 @@ Dann im Browser öffnen: **http://localhost:5173**
 | Du sagst/schreibst | Skyte AI macht |
 |---|---|
 | „Mein Ziel ist täglich lesen" | legt ein Ziel an |
-| „Plane Einkaufen am Samstag" | legt einen Plan an |
+| „Plane Einkaufen, hohe Priorität, bis Montag" | legt einen Plan mit Priorität + Fälligkeitsdatum an |
 | „Einkaufen ist fertig" | setzt den Plan auf „Fertig" |
-| „Was ist geplant?" | listet alle Pläne |
-| „Meine Ziele" | listet alle Ziele |
+| „Notiere: Milch kaufen" | legt eine Notiz an |
+| „Erinnere mich an den Zahnarzttermin morgen um 15:00" | legt eine Erinnerung an |
+| „Starte einen Timer für 25 Minuten" / „Stoppe den Timer" | steuert den Fokus-Timer |
+| „Was ist geplant?" / „Meine Ziele" | zeigt eine Übersicht |
 | „Hilfe" | zeigt alle Befehle |
+
+> Die Datums-/Zeiterkennung im Demo-Modus ist bewusst einfach gehalten (Wochentage, „morgen"/„übermorgen", feste Uhrzeit-Syntax). Mit einem echten Claude-Key funktioniert freie Formulierung deutlich zuverlässiger.
 
 ## Technik
 
@@ -60,4 +69,4 @@ Vite + React 18 + TypeScript · zustand (State + localStorage-Persistenz) · Web
 
 **Demo mode** works without any API key. To connect the real Claude, create an API key at [console.anthropic.com](https://console.anthropic.com) and paste it under *Settings → AI Connection*. The key is stored only in your browser's localStorage and sent directly to the Anthropic API — never host this app publicly with a key configured.
 
-Try: "My goal is to read every day" · "Plan grocery shopping on Saturday" · "Grocery shopping is done" · "What's planned?" — switch the UI language with the DE/EN toggle in the header.
+Try: "My goal is to read every day" · "Plan grocery shopping high priority by tomorrow" · "Grocery shopping is done" · "Note: buy milk" · "Remind me to call the dentist tomorrow at 15:00" · "Start a timer for 25 minutes" · "What's planned?" — switch the UI language and light/dark theme with the toggles in the header.

@@ -13,20 +13,36 @@ function applyDemoAction(action: DemoAction) {
       store.addGoal(action.text);
       break;
     case 'addPlan':
-      store.addPlan(action.title);
+      store.addPlan(action.title, undefined, {
+        priority: action.priority,
+        dueDate: action.dueDate,
+      });
       break;
     case 'completePlan':
       store.updatePlanStatus(action.planId, 'done');
+      break;
+    case 'addNote':
+      store.addNote(action.text);
+      break;
+    case 'addReminder':
+      store.addReminder(action.text, action.dueAt);
+      break;
+    case 'startTimer':
+      store.startFocusTimer(action.minutes * 60);
+      break;
+    case 'stopTimer':
+      store.stopFocusTimer();
       break;
   }
 }
 
 function demoReply(userText: string): string {
-  const { settings, plans, goals } = useAppStore.getState();
+  const { settings, plans, goals, focusTimer } = useAppStore.getState();
   const result = runDemoBrain(userText, {
     language: settings.language,
     plans,
     goals,
+    focusTimerRunning: focusTimer.targetEndAt !== null && focusTimer.targetEndAt > Date.now(),
   });
   if (result.action) applyDemoAction(result.action);
   return result.text;

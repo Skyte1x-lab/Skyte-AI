@@ -11,6 +11,10 @@
   --color-success: #7D9B76;
   --color-success-soft: #EAF0E8;
   --color-danger: #C0392B;
+  --color-danger-soft: #F8E3E0;
+  --color-accent-rgb: 217, 119, 89;
+  --color-danger-rgb: 192, 57, 43;
+  --color-column-bg: rgba(232, 226, 214, 0.35);
 
   /* Typografie — Systemschriften, keine externen Fonts */
   --font-heading: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif;
@@ -27,4 +31,24 @@
   --space-3: 16px;
   --space-4: 24px;
   --space-5: 40px;
+}
+
+:root[data-theme='dark'] {
+  --color-bg: #221D17;
+  --color-surface: #2C2620;
+  --color-accent: #DE8259;
+  --color-accent-hover: #E89670;
+  --color-accent-soft: #3D2B21;
+  --color-text: #F3EADD;
+  --color-text-muted: #A89A87;
+  --color-border: #40382C;
+  --color-success: #93B489;
+  --color-success-soft: #263024;
+  --color-danger: #E2604F;
+  --color-danger-soft: #3A2420;
+  --color-accent-rgb: 222, 130, 89;
+  --color-danger-rgb: 226, 96, 79;
+  --color-column-bg: rgba(255, 255, 255, 0.05);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 2px 10px rgba(0, 0, 0, 0.45);
 }

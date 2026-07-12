@@ -1,6 +1,7 @@
 import { useTranslation } from '../i18n/useTranslation';
 import { useAppStore } from '../store/useAppStore';
 import type { View } from '../types';
+import SkyteOrb from './SkyteOrb';
 
 const tabs: { view: View; key: 'nav.chat' | 'nav.dashboard' | 'nav.settings' }[] = [
   { view: 'chat', key: 'nav.chat' },
@@ -20,7 +21,7 @@ export default function Header() {
   return (
     <header className="header">
       <div className="wordmark">
-        <span className="wordmark-spark" aria-hidden="true" />
+        <SkyteOrb size="sm" />
         Skyte AI
         <span className={`mode-badge${isClaudeMode ? ' claude' : ''}`}>
           {isClaudeMode ? t('mode.claude') : t('mode.demo')}
@@ -54,6 +55,15 @@ export default function Header() {
           onClick={() => setSettings({ voiceOutput: !settings.voiceOutput })}
         >
           {settings.voiceOutput ? '🔊' : '🔇'}
+        </button>
+        <button
+          className={`icon-btn${settings.theme === 'dark' ? ' on' : ''}`}
+          title={t('header.themeTooltip')}
+          onClick={() =>
+            setSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' })
+          }
+        >
+          {settings.theme === 'dark' ? '🌙' : '☀️'}
         </button>
       </div>
     </header>

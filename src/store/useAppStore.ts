@@ -1,6 +1,17 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { ChatMessage, Goal, PlanItem, PlanStatus, Settings, View } from '../types';
+import type {
+  ChatMessage,
+  FocusTimerState,
+  Goal,
+  Note,
+  PlanItem,
+  PlanPriority,
+  PlanStatus,
+  Reminder,
+  Settings,
+  View,
+} from '../types';
 
 const MAX_CHAT_MESSAGES = 50;
 
@@ -9,11 +20,21 @@ const defaultSettings: Settings = {
   voiceOutput: false,
   apiKey: '',
   model: 'claude-sonnet-5',
+  theme: 'light',
+};
+
+const defaultFocusTimer: FocusTimerState = {
+  targetEndAt: null,
+  label: '',
+  durationSeconds: 0,
 };
 
 interface AppState {
   goals: Goal[];
   plans: PlanItem[];
+  notes: Note[];
+  reminders: Reminder[];
+  focusTimer: FocusTimerState;
   chatHistory: ChatMessage[];
   settings: Settings;
   activeView: View;
@@ -23,10 +44,29 @@ interface AppState {
   updateGoal: (id: string, patch: Partial<Pick<Goal, 'text' | 'achieved'>>) => void;
   deleteGoal: (id: string) => void;
 
-  addPlan: (title: string, description?: string) => PlanItem;
-  updatePlan: (id: string, patch: Partial<Pick<PlanItem, 'title' | 'description'>>) => void;
+  addPlan: (
+    title: string,
+    description?: string,
+    opts?: { priority?: PlanPriority; dueDate?: number },
+  ) => PlanItem;
+  updatePlan: (
+    id: string,
+    patch: Partial<Pick<PlanItem, 'title' | 'description' | 'priority' | 'dueDate'>>,
+  ) => void;
   updatePlanStatus: (id: string, status: PlanStatus) => boolean;
   deletePlan: (id: string) => void;
+
+  addNote: (text: string) => Note;
+  updateNote: (id: string, patch: Partial<Pick<Note, 'text'>>) => void;
+  deleteNote: (id: string) => void;
+
+  addReminder: (text: string, dueAt: number) => Reminder;
+  updateReminder: (id: string, patch: Partial<Pick<Reminder, 'text' | 'dueAt'>>) => void;
+  setReminderDone: (id: string, done: boolean) => void;
+  deleteReminder: (id: string) => void;
+
+  startFocusTimer: (durationSeconds: number, label?: string) => void;
+  stopFocusTimer: () => void;
 
   addChatMessage: (msg: Omit<ChatMessage, 'id' | 'timestamp'>) => ChatMessage;
   clearChat: () => void;
@@ -42,6 +82,9 @@ export const useAppStore = create<AppState>()(
     (set) => ({
       goals: [],
       plans: [],
+      notes: [],
+      reminders: [],
+      focusTimer: defaultFocusTimer,
       chatHistory: [],
       settings: defaultSettings,
       activeView: 'chat',
@@ -66,12 +109,14 @@ export const useAppStore = create<AppState>()(
       deleteGoal: (id) =>
         set((s) => ({ goals: s.goals.filter((g) => g.id !== id) })),
 
-      addPlan: (title, description) => {
+      addPlan: (title, description, opts) => {
         const plan: PlanItem = {
           id: crypto.randomUUID(),
           title: title.trim(),
           description: description?.trim() || undefined,
           status: 'planned',
+          priority: opts?.priority ?? 'medium',
+          dueDate: opts?.dueDate,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         };
@@ -101,6 +146,63 @@ export const useAppStore = create<AppState>()(
       deletePlan: (id) =>
         set((s) => ({ plans: s.plans.filter((p) => p.id !== id) })),
 
+      addNote: (text) => {
+        const note: Note = {
+          id: crypto.randomUUID(),
+          text: text.trim(),
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+        set((s) => ({ notes: [...s.notes, note] }));
+        return note;
+      },
+
+      updateNote: (id, patch) =>
+        set((s) => ({
+          notes: s.notes.map((n) =>
+            n.id === id ? { ...n, ...patch, updatedAt: Date.now() } : n,
+          ),
+        })),
+
+      deleteNote: (id) =>
+        set((s) => ({ notes: s.notes.filter((n) => n.id !== id) })),
+
+      addReminder: (text, dueAt) => {
+        const reminder: Reminder = {
+          id: crypto.randomUUID(),
+          text: text.trim(),
+          dueAt,
+          done: false,
+          createdAt: Date.now(),
+        };
+        set((s) => ({ reminders: [...s.reminders, reminder] }));
+        return reminder;
+      },
+
+      updateReminder: (id, patch) =>
+        set((s) => ({
+          reminders: s.reminders.map((r) => (r.id === id ? { ...r, ...patch } : r)),
+        })),
+
+      setReminderDone: (id, done) =>
+        set((s) => ({
+          reminders: s.reminders.map((r) => (r.id === id ? { ...r, done } : r)),
+        })),
+
+      deleteReminder: (id) =>
+        set((s) => ({ reminders: s.reminders.filter((r) => r.id !== id) })),
+
+      startFocusTimer: (durationSeconds, label) =>
+        set({
+          focusTimer: {
+            targetEndAt: Date.now() + durationSeconds * 1000,
+            label: label?.trim() || '',
+            durationSeconds,
+          },
+        }),
+
+      stopFocusTimer: () => set({ focusTimer: { ...defaultFocusTimer } }),
+
       addChatMessage: (msg) => {
         const message: ChatMessage = {
           ...msg,
@@ -125,20 +227,48 @@ export const useAppStore = create<AppState>()(
         set({
           goals: [],
           plans: [],
+          notes: [],
+          reminders: [],
+          focusTimer: defaultFocusTimer,
           chatHistory: [],
           settings: defaultSettings,
         }),
     }),
     {
       name: 'skyte-ai-storage',
-      version: 1,
+      version: 2,
       partialize: (s) => ({
         goals: s.goals,
         plans: s.plans,
+        notes: s.notes,
+        reminders: s.reminders,
+        focusTimer: s.focusTimer,
         chatHistory: s.chatHistory,
         settings: s.settings,
       }),
-      migrate: (persisted) => persisted as AppState,
+      migrate: (persisted, version) => {
+        const s = (persisted ?? {}) as Partial<AppState> & { settings?: Partial<Settings> };
+        if (version < 2) {
+          return {
+            goals: s.goals ?? [],
+            plans: (s.plans ?? []).map((p) => ({
+              ...p,
+              priority: (p as Partial<PlanItem>).priority ?? 'medium',
+              dueDate: (p as Partial<PlanItem>).dueDate,
+            })) as PlanItem[],
+            notes: s.notes ?? [],
+            reminders: s.reminders ?? [],
+            focusTimer: s.focusTimer ?? defaultFocusTimer,
+            chatHistory: s.chatHistory ?? [],
+            settings: {
+              ...defaultSettings,
+              ...s.settings,
+              theme: s.settings?.theme ?? 'light',
+            },
+          } as AppState;
+        }
+        return s as AppState;
+      },
     },
   ),
 );

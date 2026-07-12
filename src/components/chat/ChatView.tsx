@@ -5,6 +5,7 @@ import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useAppStore } from '../../store/useAppStore';
 import type { ChatMessage } from '../../types';
+import SkyteOrb from '../SkyteOrb';
 import ChatInput from './ChatInput';
 import MessageBubble from './MessageBubble';
 
@@ -74,6 +75,7 @@ export default function ChatView() {
       <div className="chat-messages">
         {chatHistory.length === 0 ? (
           <div className="chat-empty">
+            <SkyteOrb size="lg" listening={speech.isListening} />
             <h2>{t('chat.emptyTitle')}</h2>
             <p>{t('chat.emptySubtitle')}</p>
             <div className="chat-empty-examples">

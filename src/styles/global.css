@@ -72,12 +72,43 @@ h1, h2, h3 {
   white-space: nowrap;
 }
 
-.wordmark-spark {
+.skyte-orb {
+  display: inline-block;
+  border-radius: var(--radius-full);
+  background: radial-gradient(
+    circle at 35% 30%,
+    var(--color-accent-hover) 0%,
+    var(--color-accent) 55%,
+    var(--color-accent-hover) 100%
+  );
+  flex-shrink: 0;
+  animation: orb-breathe 2.4s ease-in-out infinite;
+}
+
+.skyte-orb.sm {
   width: 10px;
   height: 10px;
-  border-radius: var(--radius-full);
-  background: var(--color-accent);
-  display: inline-block;
+}
+
+.skyte-orb.md {
+  width: 20px;
+  height: 20px;
+}
+
+.skyte-orb.lg {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto var(--space-3);
+}
+
+.skyte-orb.listening {
+  --pulse-color-rgb: var(--color-accent-rgb);
+  animation: orb-breathe 2.4s ease-in-out infinite, pulse 1.2s infinite;
+}
+
+@keyframes orb-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--color-accent-rgb), 0.35); transform: scale(1); }
+  50% { box-shadow: 0 0 10px 4px rgba(var(--color-accent-rgb), 0.25); transform: scale(1.06); }
 }
 
 .mode-badge {
@@ -328,12 +359,13 @@ h1, h2, h3 {
   background: var(--color-danger);
   border-color: var(--color-danger);
   color: #fff;
+  --pulse-color-rgb: var(--color-danger-rgb);
   animation: pulse 1.2s infinite;
 }
 
 @keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(192, 57, 43, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--pulse-color-rgb), 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(var(--pulse-color-rgb), 0); }
 }
 
 /* ---------- Dashboard ---------- */
@@ -356,10 +388,79 @@ h1, h2, h3 {
   margin-bottom: var(--space-3);
 }
 
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+@media (max-width: 700px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dashboard-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard-card > h2 {
+  font-size: 1.1rem;
+  margin-bottom: var(--space-3);
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-3);
+}
+
+.stat-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.stat-tile-value {
+  font-family: var(--font-heading);
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.stat-tile-label {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.stat-tile.warn {
+  border-color: var(--color-danger);
+}
+
+.stat-tile.warn .stat-tile-value {
+  color: var(--color-danger);
+}
+
 .add-form {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-2);
   margin-bottom: var(--space-3);
+}
+
+.plan-form-row {
+  display: flex;
+  gap: var(--space-2);
 }
 
 .add-form input {
@@ -422,6 +523,79 @@ h1, h2, h3 {
   color: var(--color-text-muted);
 }
 
+.reminder-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.reminder-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.reminder-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-success);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.reminder-time {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.reminder-item.overdue .reminder-time {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.timer-widget {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: center;
+}
+
+.timer-display {
+  font-family: var(--font-heading);
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-progress {
+  width: 100%;
+  height: 8px;
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.timer-progress-fill {
+  height: 100%;
+  background: var(--color-accent);
+  transition: width 1s linear;
+}
+
+.timer-presets {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .plan-board {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -435,7 +609,7 @@ h1, h2, h3 {
 }
 
 .plan-column {
-  background: rgba(232, 226, 214, 0.35);
+  background: var(--color-column-bg);
   border-radius: var(--radius-lg);
   padding: var(--space-3);
   min-height: 120px;
@@ -476,14 +650,59 @@ h1, h2, h3 {
   box-shadow: var(--shadow-sm);
 }
 
+.plan-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
 .plan-card-title {
   font-weight: 600;
+  flex: 1;
 }
 
 .plan-card-desc {
   font-size: 0.85rem;
   color: var(--color-text-muted);
   margin-top: 2px;
+}
+
+.priority-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  border: none;
+  cursor: pointer;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.priority-badge.low {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.priority-badge.medium {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-hover);
+}
+
+.priority-badge.high {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.plan-card-due {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+}
+
+.plan-card-due.overdue {
+  color: var(--color-danger);
+  font-weight: 600;
 }
 
 .plan-card-actions {
@@ -511,7 +730,7 @@ h1, h2, h3 {
 }
 
 .card-btn.danger:hover {
-  background: #F8E3E0;
+  background: var(--color-danger-soft);
   color: var(--color-danger);
 }
 
