@@ -129,6 +129,8 @@ h1, h2, h3 {
 
 .tab-nav {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-1);
   margin: 0 auto;
 }

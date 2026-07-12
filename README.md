@@ -19,7 +19,17 @@ Dein persönlicher KI-Assistent im Jarvis-Stil — mit Claude-inspiriertem Inter
 - 🧠 **Demo-Modus ohne Kosten** — funktioniert sofort ohne API-Key; mit Anthropic API-Key antwortet der echte Claude und verwaltet dein gesamtes Dashboard selbstständig
 - 💾 Alle Daten bleiben **lokal in deinem Browser** (localStorage)
 
-## Schnellstart
+## Als Website öffnen (GitHub Pages)
+
+Diese App lässt sich als echte Website hosten — ganz ohne eigenen Server, funktioniert auf PC und Handy:
+
+1. Im GitHub-Repo einmalig: **Settings → Pages → Build and deployment → Source: „GitHub Actions"** auswählen.
+2. Jeder Push auf den Branch `claude/skyté-ai-jarvis-interface-3bvwjo` baut die App automatisch (`.github/workflows/deploy-pages.yml`) und veröffentlicht sie unter `https://<dein-github-nutzername>.github.io/Skyte-AI/`.
+3. Die URL einfach auf dem Handy oder PC im Browser öffnen — kein `npm run dev`, kein Terminal nötig. Zum Startbildschirm hinzufügen ("Zum Home-Bildschirm") funktioniert wie eine App.
+
+Auf der gehosteten Seite funktionieren Mikrofon (Chrome/Edge, HTTPS) und ein eigener Claude-API-Key vollständig — anders als in eingebetteten Vorschau-Frames.
+
+## Lokale Entwicklung
 
 Voraussetzungen: [Node.js](https://nodejs.org) 18 oder neuer.
 
