@@ -1,0 +1,20 @@
+import Header from './components/Header';
+import ChatView from './components/chat/ChatView';
+import DashboardView from './components/dashboard/DashboardView';
+import SettingsView from './components/settings/SettingsView';
+import { useAppStore } from './store/useAppStore';
+
+export default function App() {
+  const activeView = useAppStore((s) => s.activeView);
+
+  return (
+    <div className="app">
+      <Header />
+      <main className="app-main">
+        {activeView === 'chat' && <ChatView />}
+        {activeView === 'dashboard' && <DashboardView />}
+        {activeView === 'settings' && <SettingsView />}
+      </main>
+    </div>
+  );
+}
