@@ -5,6 +5,7 @@ import { useSpeechSynthesis } from '../../hooks/useSpeechSynthesis';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useAppStore } from '../../store/useAppStore';
 import type { ChatMessage } from '../../types';
+import NeuralBackground from '../NeuralBackground';
 import SkyteOrb from '../SkyteOrb';
 import ChatInput from './ChatInput';
 import MessageBubble from './MessageBubble';
@@ -71,59 +72,64 @@ export default function ChatView() {
   };
 
   return (
-    <div className="chat-view">
-      <div className="chat-messages">
-        {chatHistory.length === 0 ? (
-          <div className="chat-empty">
-            <SkyteOrb size="lg" active={speech.isListening} />
-            <h2>{t('chat.emptyTitle')}</h2>
-            <p>{t('chat.emptySubtitle')}</p>
-            <div className="chat-empty-examples">
-              {(['chat.example1', 'chat.example2', 'chat.example3'] as const).map(
-                (key) => (
-                  <button
-                    key={key}
-                    className="example-chip"
-                    onClick={() => sendMessage(t(key), 'text')}
-                  >
-                    {t(key)}
-                  </button>
-                ),
-              )}
-            </div>
-          </div>
-        ) : (
-          chatHistory.map((message) => (
-            <MessageBubble
-              key={message.id}
-              message={message}
-              animate={animateIds.has(message.id)}
-              onRevealDone={handleRevealDone}
-            />
-          ))
-        )}
-        {isThinking && (
-          <div className="typing-indicator" aria-label="thinking">
-            <SkyteOrb size="sm" active />
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {speech.error === 'not-allowed' && (
-        <p className="empty-hint" style={{ textAlign: 'center' }}>
-          {t('chat.micDenied')}
-        </p>
-      )}
-
-      <ChatInput
-        disabled={isThinking}
-        onSend={(text) => sendMessage(text, 'text')}
-        micSupported={speech.isSupported}
-        isListening={speech.isListening}
-        interimTranscript={speech.interimTranscript}
-        onMicClick={handleMicClick}
+    <div className="chat-view-wrap">
+      <NeuralBackground
+        active={isThinking || speech.isListening}
+        messageCount={chatHistory.length}
       />
+      <div className="chat-view">
+        <div className="chat-messages">
+          {chatHistory.length === 0 ? (
+            <div className="chat-empty">
+              <h2>{t('chat.emptyTitle')}</h2>
+              <p>{t('chat.emptySubtitle')}</p>
+              <div className="chat-empty-examples">
+                {(['chat.example1', 'chat.example2', 'chat.example3'] as const).map(
+                  (key) => (
+                    <button
+                      key={key}
+                      className="example-chip"
+                      onClick={() => sendMessage(t(key), 'text')}
+                    >
+                      {t(key)}
+                    </button>
+                  ),
+                )}
+              </div>
+            </div>
+          ) : (
+            chatHistory.map((message) => (
+              <MessageBubble
+                key={message.id}
+                message={message}
+                animate={animateIds.has(message.id)}
+                onRevealDone={handleRevealDone}
+              />
+            ))
+          )}
+          {isThinking && (
+            <div className="typing-indicator" aria-label="thinking">
+              <SkyteOrb size="sm" active />
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {speech.error === 'not-allowed' && (
+          <p className="empty-hint" style={{ textAlign: 'center' }}>
+            {t('chat.micDenied')}
+          </p>
+        )}
+
+        <ChatInput
+          disabled={isThinking}
+          onSend={(text) => sendMessage(text, 'text')}
+          micSupported={speech.isSupported}
+          isListening={speech.isListening}
+          interimTranscript={speech.interimTranscript}
+          onMicClick={handleMicClick}
+        />
+      </div>
     </div>
   );
 }
