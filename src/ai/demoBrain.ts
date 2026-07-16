@@ -1,4 +1,4 @@
-import type { Goal, Language, PlanItem, PlanPriority } from '../types';
+import type { Goal, Language, Note, PlanItem, PlanPriority, Reminder } from '../types';
 
 export type DemoAction =
   | { type: 'addGoal'; text: string }
@@ -13,6 +13,8 @@ export interface DemoContext {
   language: Language;
   plans: PlanItem[];
   goals: Goal[];
+  notes: Note[];
+  reminders: Reminder[];
   focusTimerRunning: boolean;
 }
 
@@ -31,6 +33,7 @@ const R = {
       /erinnere mich(?: daran)?,?\s+an\s+(.+?)\s+(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|morgen|übermorgen)(?:\s+um\s+(\d{1,2})(?::(\d{2}))?)?\s*\.?$/i,
     startTimer: /^starte?\s+(?:einen\s+)?timer(?:\s+für)?\s+(\d{1,3})\s*(?:minuten|min)\.?$/i,
     stopTimer: /^stoppe?\s+den\s+timer\.?$/i,
+    dailyBriefing: /tagesbriefing|was steht heute an|briefing/i,
     listPlans: /was (?:ist|steht).*(?:geplant|an)|zeig.*(?:pläne|plan|aufgaben)/i,
     listGoals: /(?:meine|welche|zeig.*)\s*ziele/i,
     greeting: /^(?:hallo|hi|hey|servus|moin|guten (?:morgen|tag|abend))\b/i,
@@ -47,6 +50,7 @@ const R = {
       /remind me to\s+(.+?)\s+(?:on\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|day after tomorrow)(?:\s+at\s+(\d{1,2})(?::(\d{2}))?)?\s*\.?$/i,
     startTimer: /^start\s+(?:a\s+)?timer\s+for\s+(\d{1,3})\s*(?:minutes|min)\.?$/i,
     stopTimer: /^stop\s+the\s+timer\.?$/i,
+    dailyBriefing: /daily briefing|what'?s on (?:today|my plate today)|briefing/i,
     listPlans: /what(?:'s| is) (?:planned|on my list)|show (?:my )?plans/i,
     listGoals: /(?:my|what|show.*)\s*goals/i,
     greeting: /^(?:hello|hi|hey|good (?:morning|afternoon|evening))\b/i,
@@ -194,6 +198,69 @@ function formatPlans(plans: PlanItem[], lang: Language): string {
       for (const p of items) lines.push(planLine(p, lang));
     }
   }
+  return lines.join('\n');
+}
+
+function isToday(ms: number): boolean {
+  const d = new Date(ms);
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+}
+
+function formatBriefing(ctx: DemoContext, lang: Language): string {
+  const now = Date.now();
+  const overduePlans = ctx.plans.filter(
+    (p) => p.status !== 'done' && !p.archived && p.dueDate !== undefined && p.dueDate < now && !isToday(p.dueDate),
+  );
+  const todaysPlans = ctx.plans.filter(
+    (p) => p.status !== 'done' && !p.archived && p.dueDate !== undefined && isToday(p.dueDate),
+  );
+  const overdueReminders = ctx.reminders.filter((r) => !r.done && r.dueAt < now && !isToday(r.dueAt));
+  const todaysReminders = ctx.reminders.filter((r) => !r.done && isToday(r.dueAt));
+  const openGoals = ctx.goals.filter((g) => !g.achieved && !g.archived);
+
+  const nothing =
+    overduePlans.length === 0 &&
+    todaysPlans.length === 0 &&
+    overdueReminders.length === 0 &&
+    todaysReminders.length === 0;
+
+  if (nothing) {
+    return lang === 'de'
+      ? '🌅 Für heute steht nichts Dringendes an. Guter Zeitpunkt, ein neues Ziel oder einen Plan anzulegen!'
+      : "🌅 Nothing urgent for today. A good moment to add a new goal or plan!";
+  }
+
+  const lines: string[] = [lang === 'de' ? '🌅 Dein Tagesbriefing:' : "🌅 Your daily briefing:"];
+
+  if (overduePlans.length > 0 || overdueReminders.length > 0) {
+    lines.push(lang === 'de' ? '\n⚠️ Überfällig:' : '\n⚠️ Overdue:');
+    overduePlans.forEach((p) => lines.push(planLine(p, lang)));
+    overdueReminders.forEach((r) => lines.push(`• ${r.text}`));
+  }
+  if (todaysPlans.length > 0 || todaysReminders.length > 0) {
+    lines.push(lang === 'de' ? '\n📌 Heute:' : '\n📌 Today:');
+    todaysPlans.forEach((p) => lines.push(planLine(p, lang)));
+    todaysReminders.forEach((r) => {
+      const time = new Date(r.dueAt).toLocaleTimeString(lang === 'de' ? 'de-DE' : 'en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      lines.push(`• ${time} — ${r.text}`);
+    });
+  }
+  if (openGoals.length > 0) {
+    lines.push(
+      lang === 'de'
+        ? `\n🎯 Offene Ziele: ${openGoals.length}`
+        : `\n🎯 Open goals: ${openGoals.length}`,
+    );
+  }
+
   return lines.join('\n');
 }
 
@@ -353,6 +420,7 @@ export function runDemoBrain(input: string, ctx: DemoContext): DemoResult {
     };
   }
 
+  if (r.dailyBriefing.test(text)) return { text: formatBriefing(ctx, lang) };
   if (r.listPlans.test(text)) return { text: formatPlans(ctx.plans, lang) };
   if (r.listGoals.test(text)) return { text: formatGoals(ctx.goals, lang) };
 
@@ -388,8 +456,8 @@ export function runDemoBrain(input: string, ctx: DemoContext): DemoResult {
     return {
       text:
         lang === 'de'
-          ? 'Das kann ich (Demo-Modus):\n• „Mein Ziel ist …" — Ziel anlegen\n• „Plane …, hohe/mittlere/niedrige Priorität, bis Montag" — Plan anlegen\n• „… ist fertig" — Plan abschließen\n• „Notiere: …" — Notiz anlegen\n• „Erinnere mich an … morgen um 15:00" — Erinnerung anlegen\n• „Starte einen Timer für 25 Minuten" / „Stoppe den Timer" — Fokus-Timer\n• „Was ist geplant?" / „Meine Ziele" — Übersicht anzeigen\n\nMit einem Anthropic API-Key (Einstellungen) antworte ich frei auf alles.'
-          : 'What I can do (demo mode):\n• "My goal is …" — create a goal\n• "Plan …, high/medium/low priority, by tomorrow" — create a plan\n• "… is done" — complete a plan\n• "Note: …" — create a note\n• "Remind me to … tomorrow at 15:00" — create a reminder\n• "Start a timer for 25 minutes" / "Stop the timer" — focus timer\n• "What is planned?" / "My goals" — show an overview\n\nWith an Anthropic API key (settings) I can answer anything.',
+          ? 'Das kann ich (Demo-Modus):\n• „Mein Ziel ist …" — Ziel anlegen\n• „Plane …, hohe/mittlere/niedrige Priorität, bis Montag" — Plan anlegen\n• „… ist fertig" — Plan abschließen\n• „Notiere: …" — Notiz anlegen\n• „Erinnere mich an … morgen um 15:00" — Erinnerung anlegen\n• „Starte einen Timer für 25 Minuten" / „Stoppe den Timer" — Fokus-Timer\n• „Tagesbriefing" — Zusammenfassung für heute\n• „Was ist geplant?" / „Meine Ziele" — Übersicht anzeigen\n\nMit einem Anthropic API-Key (Einstellungen) antworte ich frei auf alles.'
+          : 'What I can do (demo mode):\n• "My goal is …" — create a goal\n• "Plan …, high/medium/low priority, by tomorrow" — create a plan\n• "… is done" — complete a plan\n• "Note: …" — create a note\n• "Remind me to … tomorrow at 15:00" — create a reminder\n• "Start a timer for 25 minutes" / "Stop the timer" — focus timer\n• "Daily briefing" — a summary for today\n• "What is planned?" / "My goals" — show an overview\n\nWith an Anthropic API key (settings) I can answer anything.',
     };
   }
 

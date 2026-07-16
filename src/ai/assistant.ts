@@ -45,11 +45,13 @@ function applyDemoAction(action: DemoAction) {
 }
 
 function demoReply(userText: string): string {
-  const { settings, plans, goals, focusTimer } = useAppStore.getState();
+  const { settings, plans, goals, notes, reminders, focusTimer } = useAppStore.getState();
   const result = runDemoBrain(userText, {
     language: settings.language,
     plans,
     goals,
+    notes,
+    reminders,
     focusTimerRunning: focusTimer.targetEndAt !== null && focusTimer.targetEndAt > Date.now(),
   });
   if (result.action) applyDemoAction(result.action);

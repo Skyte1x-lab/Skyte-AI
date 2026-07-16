@@ -1,7 +1,9 @@
 import { useMemo, useState, type FormEvent } from 'react';
+import { matchesSearch } from '../../lib/search';
 import { useNowTick } from '../../hooks/useNowTick';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useAppStore } from '../../store/useAppStore';
+import type { ReminderRecurrence } from '../../types';
 
 function toDateTimeInputValue(ms: number): string {
   const d = new Date(ms);
@@ -12,6 +14,7 @@ function toDateTimeInputValue(ms: number): string {
 export default function RemindersList() {
   const { t, language } = useTranslation();
   const reminders = useAppStore((s) => s.reminders);
+  const searchQuery = useAppStore((s) => s.searchQuery);
   const addReminder = useAppStore((s) => s.addReminder);
   const updateReminder = useAppStore((s) => s.updateReminder);
   const setReminderDone = useAppStore((s) => s.setReminderDone);
@@ -21,21 +24,26 @@ export default function RemindersList() {
 
   const [newText, setNewText] = useState('');
   const [newWhen, setNewWhen] = useState('');
+  const [newRecurrence, setNewRecurrence] = useState<ReminderRecurrence>('none');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [editWhen, setEditWhen] = useState('');
 
   const sorted = useMemo(
-    () => [...reminders].sort((a, b) => a.dueAt - b.dueAt),
-    [reminders],
+    () =>
+      [...reminders]
+        .filter((r) => matchesSearch(searchQuery, r.text))
+        .sort((a, b) => a.dueAt - b.dueAt),
+    [reminders, searchQuery],
   );
 
   const handleAdd = (e: FormEvent) => {
     e.preventDefault();
     if (!newText.trim() || !newWhen) return;
-    addReminder(newText, new Date(newWhen).getTime());
+    addReminder(newText, new Date(newWhen).getTime(), newRecurrence);
     setNewText('');
     setNewWhen('');
+    setNewRecurrence('none');
   };
 
   const saveEdit = (id: string) => {
@@ -43,6 +51,12 @@ export default function RemindersList() {
       updateReminder(id, { text: editText.trim(), dueAt: new Date(editWhen).getTime() });
     }
     setEditingId(null);
+  };
+
+  const recurrenceLabel = (r: ReminderRecurrence | undefined) => {
+    if (r === 'daily') return t('dashboard.reminders.daily');
+    if (r === 'weekly') return t('dashboard.reminders.weekly');
+    return null;
   };
 
   return (
@@ -59,6 +73,15 @@ export default function RemindersList() {
           value={newWhen}
           onChange={(e) => setNewWhen(e.target.value)}
         />
+        <select
+          className="settings-select"
+          value={newRecurrence}
+          onChange={(e) => setNewRecurrence(e.target.value as ReminderRecurrence)}
+        >
+          <option value="none">{t('dashboard.reminders.noRecurrence')}</option>
+          <option value="daily">{t('dashboard.reminders.daily')}</option>
+          <option value="weekly">{t('dashboard.reminders.weekly')}</option>
+        </select>
         <button type="submit">{t('dashboard.reminders.add')}</button>
       </form>
 
@@ -103,6 +126,7 @@ export default function RemindersList() {
                         { dateStyle: 'medium', timeStyle: 'short' },
                       )}
                       {isOverdue ? ` · ${t('dashboard.reminders.overdue')}` : ''}
+                      {recurrenceLabel(reminder.recurrence) && ` · 🔁 ${recurrenceLabel(reminder.recurrence)}`}
                     </span>
                   </span>
                 )}

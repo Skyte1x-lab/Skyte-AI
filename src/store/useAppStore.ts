@@ -4,17 +4,21 @@ import type {
   ChatMessage,
   FocusTimerState,
   Goal,
+  LastDeleted,
   Note,
   PlanItem,
   PlanPriority,
   PlanStatus,
   Reminder,
+  ReminderRecurrence,
   Settings,
+  Subtask,
   ToastItem,
   View,
 } from '../types';
 
 const MAX_CHAT_MESSAGES = 50;
+const UNDO_WINDOW_MS = 6000;
 
 const defaultSettings: Settings = {
   language: 'de',
@@ -22,6 +26,8 @@ const defaultSettings: Settings = {
   apiKey: '',
   model: 'claude-sonnet-5',
   theme: 'light',
+  accentColor: undefined,
+  notificationsEnabled: false,
 };
 
 const defaultFocusTimer: FocusTimerState = {
@@ -29,6 +35,12 @@ const defaultFocusTimer: FocusTimerState = {
   label: '',
   durationSeconds: 0,
 };
+
+function addDays(ms: number, days: number): number {
+  const d = new Date(ms);
+  d.setDate(d.getDate() + days);
+  return d.getTime();
+}
 
 interface AppState {
   goals: Goal[];
@@ -41,34 +53,53 @@ interface AppState {
   activeView: View;
   isThinking: boolean;
   toasts: ToastItem[];
+  lastDeleted: LastDeleted | null;
+  focusModeActive: boolean;
+  searchQuery: string;
 
   addGoal: (text: string) => Goal;
-  updateGoal: (id: string, patch: Partial<Pick<Goal, 'text' | 'achieved'>>) => void;
+  updateGoal: (
+    id: string,
+    patch: Partial<Pick<Goal, 'text' | 'achieved'>>,
+  ) => void;
+  archiveGoal: (id: string) => void;
+  unarchiveGoal: (id: string) => void;
   deleteGoal: (id: string) => void;
 
   addPlan: (
     title: string,
     description?: string,
-    opts?: { priority?: PlanPriority; dueDate?: number },
+    opts?: { priority?: PlanPriority; dueDate?: number; tags?: string[] },
   ) => PlanItem;
   updatePlan: (
     id: string,
-    patch: Partial<Pick<PlanItem, 'title' | 'description' | 'priority' | 'dueDate'>>,
+    patch: Partial<Pick<PlanItem, 'title' | 'description' | 'priority' | 'dueDate' | 'tags'>>,
   ) => void;
   updatePlanStatus: (id: string, status: PlanStatus) => boolean;
+  archivePlan: (id: string) => void;
+  unarchivePlan: (id: string) => void;
   deletePlan: (id: string) => void;
+  addSubtask: (planId: string, text: string) => void;
+  toggleSubtask: (planId: string, subtaskId: string) => void;
+  deleteSubtask: (planId: string, subtaskId: string) => void;
 
-  addNote: (text: string) => Note;
-  updateNote: (id: string, patch: Partial<Pick<Note, 'text'>>) => void;
+  addNote: (text: string, tags?: string[]) => Note;
+  updateNote: (id: string, patch: Partial<Pick<Note, 'text' | 'tags'>>) => void;
   deleteNote: (id: string) => void;
 
-  addReminder: (text: string, dueAt: number) => Reminder;
-  updateReminder: (id: string, patch: Partial<Pick<Reminder, 'text' | 'dueAt'>>) => void;
+  addReminder: (text: string, dueAt: number, recurrence?: ReminderRecurrence) => Reminder;
+  updateReminder: (
+    id: string,
+    patch: Partial<Pick<Reminder, 'text' | 'dueAt' | 'notified'>>,
+  ) => void;
   setReminderDone: (id: string, done: boolean) => void;
   deleteReminder: (id: string) => void;
 
+  undoDelete: () => void;
+
   startFocusTimer: (durationSeconds: number, label?: string) => void;
   stopFocusTimer: () => void;
+  setFocusMode: (active: boolean) => void;
 
   addChatMessage: (msg: Omit<ChatMessage, 'id' | 'timestamp'>) => ChatMessage;
   clearChat: () => void;
@@ -76,14 +107,22 @@ interface AppState {
   setSettings: (patch: Partial<Settings>) => void;
   setActiveView: (view: View) => void;
   setThinking: (thinking: boolean) => void;
-  pushToast: (icon: string, text: string) => void;
+  setSearchQuery: (query: string) => void;
+  pushToast: (
+    icon: string,
+    text: string,
+    action?: { label: string; onAction: () => void },
+  ) => void;
   dismissToast: (id: string) => void;
+
+  exportData: () => string;
+  importData: (json: string) => boolean;
   resetAll: () => void;
 }
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       goals: [],
       plans: [],
       notes: [],
@@ -94,6 +133,9 @@ export const useAppStore = create<AppState>()(
       activeView: 'chat',
       isThinking: false,
       toasts: [],
+      lastDeleted: null,
+      focusModeActive: false,
+      searchQuery: '',
 
       addGoal: (text) => {
         const goal: Goal = {
@@ -108,11 +150,31 @@ export const useAppStore = create<AppState>()(
 
       updateGoal: (id, patch) =>
         set((s) => ({
-          goals: s.goals.map((g) => (g.id === id ? { ...g, ...patch } : g)),
+          goals: s.goals.map((g) => {
+            if (g.id !== id) return g;
+            const next = { ...g, ...patch };
+            if (patch.achieved === true && !g.achieved) next.achievedAt = Date.now();
+            if (patch.achieved === false) next.achievedAt = undefined;
+            return next;
+          }),
         })),
 
-      deleteGoal: (id) =>
-        set((s) => ({ goals: s.goals.filter((g) => g.id !== id) })),
+      archiveGoal: (id) =>
+        set((s) => ({ goals: s.goals.map((g) => (g.id === id ? { ...g, archived: true } : g)) })),
+      unarchiveGoal: (id) =>
+        set((s) => ({ goals: s.goals.map((g) => (g.id === id ? { ...g, archived: false } : g)) })),
+
+      deleteGoal: (id) => {
+        const goal = get().goals.find((g) => g.id === id);
+        set((s) => ({ goals: s.goals.filter((g) => g.id !== id) }));
+        if (goal) {
+          set({ lastDeleted: { entity: 'goal', item: goal } });
+          get().pushToast('🗑️', 'Ziel gelöscht', {
+            label: 'Rückgängig',
+            onAction: () => get().undoDelete(),
+          });
+        }
+      },
 
       addPlan: (title, description, opts) => {
         const plan: PlanItem = {
@@ -122,6 +184,8 @@ export const useAppStore = create<AppState>()(
           status: 'planned',
           priority: opts?.priority ?? 'medium',
           dueDate: opts?.dueDate,
+          tags: opts?.tags && opts.tags.length > 0 ? opts.tags : undefined,
+          subtasks: [],
           createdAt: Date.now(),
           updatedAt: Date.now(),
         };
@@ -148,13 +212,65 @@ export const useAppStore = create<AppState>()(
         return found;
       },
 
-      deletePlan: (id) =>
-        set((s) => ({ plans: s.plans.filter((p) => p.id !== id) })),
+      archivePlan: (id) =>
+        set((s) => ({ plans: s.plans.map((p) => (p.id === id ? { ...p, archived: true } : p)) })),
+      unarchivePlan: (id) =>
+        set((s) => ({ plans: s.plans.map((p) => (p.id === id ? { ...p, archived: false } : p)) })),
 
-      addNote: (text) => {
+      deletePlan: (id) => {
+        const plan = get().plans.find((p) => p.id === id);
+        set((s) => ({ plans: s.plans.filter((p) => p.id !== id) }));
+        if (plan) {
+          set({ lastDeleted: { entity: 'plan', item: plan } });
+          get().pushToast('🗑️', 'Plan gelöscht', {
+            label: 'Rückgängig',
+            onAction: () => get().undoDelete(),
+          });
+        }
+      },
+
+      addSubtask: (planId, text) =>
+        set((s) => ({
+          plans: s.plans.map((p) =>
+            p.id === planId
+              ? {
+                  ...p,
+                  subtasks: [...(p.subtasks ?? []), { id: crypto.randomUUID(), text: text.trim(), done: false }],
+                  updatedAt: Date.now(),
+                }
+              : p,
+          ),
+        })),
+
+      toggleSubtask: (planId, subtaskId) =>
+        set((s) => ({
+          plans: s.plans.map((p) =>
+            p.id === planId
+              ? {
+                  ...p,
+                  subtasks: (p.subtasks ?? []).map((st) =>
+                    st.id === subtaskId ? { ...st, done: !st.done } : st,
+                  ),
+                  updatedAt: Date.now(),
+                }
+              : p,
+          ),
+        })),
+
+      deleteSubtask: (planId, subtaskId) =>
+        set((s) => ({
+          plans: s.plans.map((p) =>
+            p.id === planId
+              ? { ...p, subtasks: (p.subtasks ?? []).filter((st) => st.id !== subtaskId), updatedAt: Date.now() }
+              : p,
+          ),
+        })),
+
+      addNote: (text, tags) => {
         const note: Note = {
           id: crypto.randomUUID(),
           text: text.trim(),
+          tags: tags && tags.length > 0 ? tags : undefined,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         };
@@ -169,15 +285,25 @@ export const useAppStore = create<AppState>()(
           ),
         })),
 
-      deleteNote: (id) =>
-        set((s) => ({ notes: s.notes.filter((n) => n.id !== id) })),
+      deleteNote: (id) => {
+        const note = get().notes.find((n) => n.id === id);
+        set((s) => ({ notes: s.notes.filter((n) => n.id !== id) }));
+        if (note) {
+          set({ lastDeleted: { entity: 'note', item: note } });
+          get().pushToast('🗑️', 'Notiz gelöscht', {
+            label: 'Rückgängig',
+            onAction: () => get().undoDelete(),
+          });
+        }
+      },
 
-      addReminder: (text, dueAt) => {
+      addReminder: (text, dueAt, recurrence) => {
         const reminder: Reminder = {
           id: crypto.randomUUID(),
           text: text.trim(),
           dueAt,
           done: false,
+          recurrence: recurrence && recurrence !== 'none' ? recurrence : undefined,
           createdAt: Date.now(),
         };
         set((s) => ({ reminders: [...s.reminders, reminder] }));
@@ -189,13 +315,50 @@ export const useAppStore = create<AppState>()(
           reminders: s.reminders.map((r) => (r.id === id ? { ...r, ...patch } : r)),
         })),
 
-      setReminderDone: (id, done) =>
+      setReminderDone: (id, done) => {
         set((s) => ({
           reminders: s.reminders.map((r) => (r.id === id ? { ...r, done } : r)),
-        })),
+        }));
+        if (done) {
+          const reminder = get().reminders.find((r) => r.id === id);
+          if (reminder?.recurrence) {
+            const nextDueAt = addDays(reminder.dueAt, reminder.recurrence === 'daily' ? 1 : 7);
+            get().addReminder(reminder.text, nextDueAt, reminder.recurrence);
+          }
+        }
+      },
 
-      deleteReminder: (id) =>
-        set((s) => ({ reminders: s.reminders.filter((r) => r.id !== id) })),
+      deleteReminder: (id) => {
+        const reminder = get().reminders.find((r) => r.id === id);
+        set((s) => ({ reminders: s.reminders.filter((r) => r.id !== id) }));
+        if (reminder) {
+          set({ lastDeleted: { entity: 'reminder', item: reminder } });
+          get().pushToast('🗑️', 'Erinnerung gelöscht', {
+            label: 'Rückgängig',
+            onAction: () => get().undoDelete(),
+          });
+        }
+      },
+
+      undoDelete: () => {
+        const deleted = get().lastDeleted;
+        if (!deleted) return;
+        switch (deleted.entity) {
+          case 'goal':
+            set((s) => ({ goals: [...s.goals, deleted.item as Goal] }));
+            break;
+          case 'plan':
+            set((s) => ({ plans: [...s.plans, deleted.item as PlanItem] }));
+            break;
+          case 'note':
+            set((s) => ({ notes: [...s.notes, deleted.item as Note] }));
+            break;
+          case 'reminder':
+            set((s) => ({ reminders: [...s.reminders, deleted.item as Reminder] }));
+            break;
+        }
+        set({ lastDeleted: null });
+      },
 
       startFocusTimer: (durationSeconds, label) =>
         set({
@@ -207,6 +370,7 @@ export const useAppStore = create<AppState>()(
         }),
 
       stopFocusTimer: () => set({ focusTimer: { ...defaultFocusTimer } }),
+      setFocusMode: (active) => set({ focusModeActive: active }),
 
       addChatMessage: (msg) => {
         const message: ChatMessage = {
@@ -227,16 +391,57 @@ export const useAppStore = create<AppState>()(
 
       setActiveView: (view) => set({ activeView: view }),
       setThinking: (thinking) => set({ isThinking: thinking }),
+      setSearchQuery: (query) => set({ searchQuery: query }),
 
-      pushToast: (icon, text) => {
+      pushToast: (icon, text, action) => {
         const id = crypto.randomUUID();
-        set((s) => ({ toasts: [...s.toasts, { id, icon, text }] }));
+        set((s) => ({
+          toasts: [
+            ...s.toasts,
+            { id, icon, text, actionLabel: action?.label, onAction: action?.onAction },
+          ],
+        }));
+        const timeout = action ? UNDO_WINDOW_MS : 3400;
         setTimeout(() => {
           set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
-        }, 3400);
+        }, timeout);
       },
       dismissToast: (id) =>
         set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
+
+      exportData: () => {
+        const s = get();
+        return JSON.stringify(
+          {
+            version: 3,
+            exportedAt: Date.now(),
+            goals: s.goals,
+            plans: s.plans,
+            notes: s.notes,
+            reminders: s.reminders,
+            settings: s.settings,
+          },
+          null,
+          2,
+        );
+      },
+
+      importData: (json) => {
+        try {
+          const data = JSON.parse(json);
+          if (!data || typeof data !== 'object') return false;
+          set({
+            goals: Array.isArray(data.goals) ? data.goals : [],
+            plans: Array.isArray(data.plans) ? data.plans : [],
+            notes: Array.isArray(data.notes) ? data.notes : [],
+            reminders: Array.isArray(data.reminders) ? data.reminders : [],
+            settings: data.settings ? { ...defaultSettings, ...data.settings } : get().settings,
+          });
+          return true;
+        } catch {
+          return false;
+        }
+      },
 
       resetAll: () =>
         set({
@@ -251,7 +456,7 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'skyte-ai-storage',
-      version: 2,
+      version: 3,
       partialize: (s) => ({
         goals: s.goals,
         plans: s.plans,
@@ -263,13 +468,14 @@ export const useAppStore = create<AppState>()(
       }),
       migrate: (persisted, version) => {
         const s = (persisted ?? {}) as Partial<AppState> & { settings?: Partial<Settings> };
-        if (version < 2) {
+        if (version < 3) {
           return {
             goals: s.goals ?? [],
-            plans: (s.plans ?? []).map((p) => ({
+            plans: ((s.plans ?? []) as Partial<PlanItem>[]).map((p) => ({
               ...p,
-              priority: (p as Partial<PlanItem>).priority ?? 'medium',
-              dueDate: (p as Partial<PlanItem>).dueDate,
+              priority: p.priority ?? 'medium',
+              dueDate: p.dueDate,
+              subtasks: p.subtasks ?? [],
             })) as PlanItem[],
             notes: s.notes ?? [],
             reminders: s.reminders ?? [],
@@ -279,6 +485,7 @@ export const useAppStore = create<AppState>()(
               ...defaultSettings,
               ...s.settings,
               theme: s.settings?.theme ?? 'light',
+              notificationsEnabled: s.settings?.notificationsEnabled ?? false,
             },
           } as AppState;
         }
@@ -287,3 +494,5 @@ export const useAppStore = create<AppState>()(
     },
   ),
 );
+
+export type { Subtask };

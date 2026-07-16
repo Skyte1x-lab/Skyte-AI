@@ -32,6 +32,7 @@ export default function FocusTimer() {
   const focusTimer = useAppStore((s) => s.focusTimer);
   const startFocusTimer = useAppStore((s) => s.startFocusTimer);
   const stopFocusTimer = useAppStore((s) => s.stopFocusTimer);
+  const setFocusMode = useAppStore((s) => s.setFocusMode);
   const voiceOutput = useAppStore((s) => s.settings.voiceOutput);
   const { speak } = useSpeechSynthesis(language);
 
@@ -84,9 +85,14 @@ export default function FocusTimer() {
               style={{ width: `${Math.min(100, progress * 100)}%` }}
             />
           </div>
-          <button className="danger-btn" onClick={stopFocusTimer}>
-            {t('dashboard.timer.stop')}
-          </button>
+          <div className="timer-actions">
+            <button className="card-btn" onClick={() => setFocusMode(true)}>
+              🧠 {t('dashboard.focusMode.enter')}
+            </button>
+            <button className="danger-btn" onClick={stopFocusTimer}>
+              {t('dashboard.timer.stop')}
+            </button>
+          </div>
         </>
       ) : (
         <>
