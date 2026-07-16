@@ -69,6 +69,10 @@ Dann im Browser öffnen: **http://localhost:5173**
 
 Vite + React 18 + TypeScript · zustand (State + localStorage-Persistenz) · Web Speech API (STT/TTS) · @anthropic-ai/sdk. Keine Datenbank, kein Backend — eine einzige lokale App.
 
+## Lizenz
+
+MIT — siehe [LICENSE](./LICENSE). Du darfst den Code frei nutzen, kopieren, verändern und weitergeben, solange der Copyright-Hinweis erhalten bleibt. Alle genutzten Abhängigkeiten (React, Vite, TypeScript, zustand, @anthropic-ai/sdk) sind selbst unter freizügigen Open-Source-Lizenzen (MIT/Apache 2.0) veröffentlicht.
+
 ---
 
 ## English
@@ -80,3 +84,5 @@ Vite + React 18 + TypeScript · zustand (State + localStorage-Persistenz) · Web
 **Demo mode** works without any API key. To connect the real Claude, create an API key at [console.anthropic.com](https://console.anthropic.com) and paste it under *Settings → AI Connection*. The key is stored only in your browser's localStorage and sent directly to the Anthropic API — never host this app publicly with a key configured.
 
 Try: "My goal is to read every day" · "Plan grocery shopping high priority by tomorrow" · "Grocery shopping is done" · "Note: buy milk" · "Remind me to call the dentist tomorrow at 15:00" · "Start a timer for 25 minutes" · "What's planned?" — switch the UI language and light/dark theme with the toggles in the header.
+
+**License:** MIT — see [LICENSE](./LICENSE).
