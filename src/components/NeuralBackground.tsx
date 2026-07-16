@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { generateNetwork } from '../lib/neuralNetwork';
 
 interface Props {
@@ -20,9 +20,6 @@ const { nodes: NODES, edges: EDGES, hubs: HUBS } = generateNetwork({
 });
 
 export default function NeuralBackground({ active = false, messageCount }: Props) {
-  const rawId = useId().replace(/[^a-zA-Z0-9]/g, '');
-  const filterId = `orb-glow-${rawId}`;
-
   const [burst, setBurst] = useState(false);
   const prevCount = useRef(messageCount);
 
@@ -43,60 +40,49 @@ export default function NeuralBackground({ active = false, messageCount }: Props
         viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
         preserveAspectRatio="xMidYMid slice"
       >
-        <defs>
-          <filter id={filterId} x="-80%" y="-80%" width="260%" height="260%">
-            <feGaussianBlur stdDeviation="1.4" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-        <g filter={`url(#${filterId})`}>
-          {EDGES.map(([a, b], i) => {
-            const [x1, y1] = NODES[a];
-            const [x2, y2] = NODES[b];
-            return (
-              <line
-                key={`e${i}`}
-                className="orb-edge"
-                x1={x1}
-                y1={y1}
-                x2={x2}
-                y2={y2}
-                style={{ animationDelay: `${(i % 8) * 0.16}s` }}
-              />
-            );
-          })}
-          {EDGES.map(([a, b], i) => {
-            const [x1, y1] = NODES[a];
-            const [x2, y2] = NODES[b];
-            const duration = 1.6 + (i % 6) * 0.26;
-            const delay = (i * 0.37) % 3.6;
-            return (
-              <circle
-                key={`s${i}`}
-                className="orb-signal"
-                r={1}
-                style={{
-                  offsetPath: `path('M ${x1} ${y1} L ${x2} ${y2}')`,
-                  ['--signal-duration' as string]: `${duration}s`,
-                  animationDelay: `${delay}s`,
-                }}
-              />
-            );
-          })}
-          {NODES.map(([x, y], i) => (
-            <circle
-              key={`n${i}`}
-              className="orb-node"
-              cx={x}
-              cy={y}
-              r={HUBS.has(i) ? 3.2 : 1.9}
-              style={{ animationDelay: `${(i % 9) * 0.2}s` }}
+        {EDGES.map(([a, b], i) => {
+          const [x1, y1] = NODES[a];
+          const [x2, y2] = NODES[b];
+          return (
+            <line
+              key={`e${i}`}
+              className="orb-edge"
+              x1={x1}
+              y1={y1}
+              x2={x2}
+              y2={y2}
+              style={{ animationDelay: `${(i % 8) * 0.16}s` }}
             />
-          ))}
-        </g>
+          );
+        })}
+        {EDGES.map(([a, b], i) => {
+          const [x1, y1] = NODES[a];
+          const [x2, y2] = NODES[b];
+          const duration = 1.6 + (i % 6) * 0.26;
+          const delay = (i * 0.37) % 3.6;
+          return (
+            <circle
+              key={`s${i}`}
+              className="orb-signal"
+              r={1.3}
+              style={{
+                offsetPath: `path('M ${x1} ${y1} L ${x2} ${y2}')`,
+                ['--signal-duration' as string]: `${duration}s`,
+                animationDelay: `${delay}s`,
+              }}
+            />
+          );
+        })}
+        {NODES.map(([x, y], i) => (
+          <circle
+            key={`n${i}`}
+            className="orb-node"
+            cx={x}
+            cy={y}
+            r={HUBS.has(i) ? 3.2 : 1.9}
+            style={{ animationDelay: `${(i % 9) * 0.2}s` }}
+          />
+        ))}
       </svg>
     </div>
   );

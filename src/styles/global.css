@@ -51,6 +51,35 @@ h1, h2, h3 {
   position: relative;
 }
 
+.view-transition {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  animation-duration: 0.32s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: both;
+}
+
+.view-transition.from-right {
+  animation-name: view-enter-from-right;
+}
+
+.view-transition.from-left {
+  animation-name: view-enter-from-left;
+}
+
+@keyframes view-enter-from-right {
+  from { opacity: 0; transform: translateX(36px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes view-enter-from-left {
+  from { opacity: 0; transform: translateX(-36px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 /* ---------- Header ---------- */
 
 .header {
@@ -97,6 +126,7 @@ h1, h2, h3 {
 
 .orb-node {
   fill: var(--color-accent);
+  filter: drop-shadow(0 0 2px rgba(var(--color-accent-rgb), 0.9));
   animation: node-pulse 2.6s ease-in-out infinite;
 }
 
@@ -111,8 +141,6 @@ h1, h2, h3 {
 .orb-signal {
   fill: #fff;
   opacity: 0;
-  filter: drop-shadow(0 0 2px rgba(var(--color-accent-rgb), 1))
-    drop-shadow(0 0 6px rgba(var(--color-accent-rgb), 0.85));
   offset-rotate: 0deg;
   animation-name: signal-travel;
   animation-duration: var(--signal-duration, 2.4s);
