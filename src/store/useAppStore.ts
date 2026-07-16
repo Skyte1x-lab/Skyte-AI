@@ -10,6 +10,7 @@ import type {
   PlanStatus,
   Reminder,
   Settings,
+  ToastItem,
   View,
 } from '../types';
 
@@ -39,6 +40,7 @@ interface AppState {
   settings: Settings;
   activeView: View;
   isThinking: boolean;
+  toasts: ToastItem[];
 
   addGoal: (text: string) => Goal;
   updateGoal: (id: string, patch: Partial<Pick<Goal, 'text' | 'achieved'>>) => void;
@@ -74,6 +76,8 @@ interface AppState {
   setSettings: (patch: Partial<Settings>) => void;
   setActiveView: (view: View) => void;
   setThinking: (thinking: boolean) => void;
+  pushToast: (icon: string, text: string) => void;
+  dismissToast: (id: string) => void;
   resetAll: () => void;
 }
 
@@ -89,6 +93,7 @@ export const useAppStore = create<AppState>()(
       settings: defaultSettings,
       activeView: 'chat',
       isThinking: false,
+      toasts: [],
 
       addGoal: (text) => {
         const goal: Goal = {
@@ -222,6 +227,16 @@ export const useAppStore = create<AppState>()(
 
       setActiveView: (view) => set({ activeView: view }),
       setThinking: (thinking) => set({ isThinking: thinking }),
+
+      pushToast: (icon, text) => {
+        const id = crypto.randomUUID();
+        set((s) => ({ toasts: [...s.toasts, { id, icon, text }] }));
+        setTimeout(() => {
+          set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
+        }, 3400);
+      },
+      dismissToast: (id) =>
+        set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 
       resetAll: () =>
         set({

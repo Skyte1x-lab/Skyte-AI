@@ -103,12 +103,14 @@ export const toolDefinitions: Anthropic.Tool[] = [
 export function executeTool(name: string, input: unknown): string {
   const store = useAppStore.getState();
   const args = (input ?? {}) as Record<string, unknown>;
+  const lang = store.settings.language;
 
   switch (name) {
     case 'create_goal': {
       const text = String(args.text ?? '').trim();
       if (!text) return 'Error: goal text is empty.';
       const goal = store.addGoal(text);
+      store.pushToast('🎯', lang === 'de' ? 'Ziel gespeichert' : 'Goal saved');
       return JSON.stringify({ ok: true, goal });
     }
     case 'create_plan': {
@@ -126,6 +128,7 @@ export function executeTool(name: string, input: unknown): string {
         args.description ? String(args.description) : undefined,
         opts,
       );
+      store.pushToast('🗂️', lang === 'de' ? 'Plan gespeichert' : 'Plan saved');
       return JSON.stringify({ ok: true, plan });
     }
     case 'update_plan': {
@@ -150,12 +153,19 @@ export function executeTool(name: string, input: unknown): string {
       }
       if (Object.keys(patch).length > 0) store.updatePlan(id, patch);
 
+      if (args.status === 'done') {
+        store.pushToast('✅', lang === 'de' ? 'Plan erledigt' : 'Plan completed');
+      } else {
+        store.pushToast('🔄', lang === 'de' ? 'Plan aktualisiert' : 'Plan updated');
+      }
       return JSON.stringify({ ok: true, id });
     }
     case 'create_note': {
       const text = String(args.text ?? '').trim();
       if (!text) return 'Error: note text is empty.';
-      return JSON.stringify({ ok: true, note: store.addNote(text) });
+      const note = store.addNote(text);
+      store.pushToast('📝', lang === 'de' ? 'Notiz gespeichert' : 'Note saved');
+      return JSON.stringify({ ok: true, note });
     }
     case 'create_reminder': {
       const text = String(args.text ?? '').trim();
@@ -164,7 +174,9 @@ export function executeTool(name: string, input: unknown): string {
       if (Number.isNaN(ms)) {
         return `Error: invalid due_at "${args.due_at}". Use ISO 8601, e.g. 2026-07-13T15:00:00.`;
       }
-      return JSON.stringify({ ok: true, reminder: store.addReminder(text, ms) });
+      const reminder = store.addReminder(text, ms);
+      store.pushToast('⏰', lang === 'de' ? 'Erinnerung gespeichert' : 'Reminder saved');
+      return JSON.stringify({ ok: true, reminder });
     }
     case 'start_timer': {
       const minutes = Number(args.minutes);
@@ -173,10 +185,12 @@ export function executeTool(name: string, input: unknown): string {
       }
       const label = args.label ? String(args.label) : undefined;
       store.startFocusTimer(Math.round(minutes * 60), label);
+      store.pushToast('⏱️', lang === 'de' ? 'Timer gestartet' : 'Timer started');
       return JSON.stringify({ ok: true, minutes, label: label ?? null });
     }
     case 'stop_timer': {
       store.stopFocusTimer();
+      store.pushToast('⏹️', lang === 'de' ? 'Timer gestoppt' : 'Timer stopped');
       return JSON.stringify({ ok: true });
     }
     case 'get_overview': {

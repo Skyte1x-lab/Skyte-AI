@@ -8,30 +8,38 @@ import { runDemoBrain, type DemoAction } from './demoBrain';
 
 function applyDemoAction(action: DemoAction) {
   const store = useAppStore.getState();
+  const lang = store.settings.language;
   switch (action.type) {
     case 'addGoal':
       store.addGoal(action.text);
+      store.pushToast('🎯', lang === 'de' ? 'Ziel gespeichert' : 'Goal saved');
       break;
     case 'addPlan':
       store.addPlan(action.title, undefined, {
         priority: action.priority,
         dueDate: action.dueDate,
       });
+      store.pushToast('🗂️', lang === 'de' ? 'Plan gespeichert' : 'Plan saved');
       break;
     case 'completePlan':
       store.updatePlanStatus(action.planId, 'done');
+      store.pushToast('✅', lang === 'de' ? 'Plan erledigt' : 'Plan completed');
       break;
     case 'addNote':
       store.addNote(action.text);
+      store.pushToast('📝', lang === 'de' ? 'Notiz gespeichert' : 'Note saved');
       break;
     case 'addReminder':
       store.addReminder(action.text, action.dueAt);
+      store.pushToast('⏰', lang === 'de' ? 'Erinnerung gespeichert' : 'Reminder saved');
       break;
     case 'startTimer':
       store.startFocusTimer(action.minutes * 60);
+      store.pushToast('⏱️', lang === 'de' ? 'Timer gestartet' : 'Timer started');
       break;
     case 'stopTimer':
       store.stopFocusTimer();
+      store.pushToast('⏹️', lang === 'de' ? 'Timer gestoppt' : 'Timer stopped');
       break;
   }
 }

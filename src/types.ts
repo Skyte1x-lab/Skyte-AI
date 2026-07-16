@@ -49,6 +49,12 @@ export interface ChatMessage {
   source?: 'demo' | 'claude';
 }
 
+export interface ToastItem {
+  id: string;
+  icon: string;
+  text: string;
+}
+
 export type Language = 'de' | 'en';
 
 export type View = 'chat' | 'dashboard' | 'settings';

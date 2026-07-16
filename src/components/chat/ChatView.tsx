@@ -75,7 +75,7 @@ export default function ChatView() {
       <div className="chat-messages">
         {chatHistory.length === 0 ? (
           <div className="chat-empty">
-            <SkyteOrb size="lg" listening={speech.isListening} />
+            <SkyteOrb size="lg" active={speech.isListening} />
             <h2>{t('chat.emptyTitle')}</h2>
             <p>{t('chat.emptySubtitle')}</p>
             <div className="chat-empty-examples">
@@ -104,9 +104,7 @@ export default function ChatView() {
         )}
         {isThinking && (
           <div className="typing-indicator" aria-label="thinking">
-            <span />
-            <span />
-            <span />
+            <SkyteOrb size="sm" active />
           </div>
         )}
         <div ref={messagesEndRef} />

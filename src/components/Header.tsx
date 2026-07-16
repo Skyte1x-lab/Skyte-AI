@@ -15,13 +15,14 @@ export default function Header() {
   const setActiveView = useAppStore((s) => s.setActiveView);
   const settings = useAppStore((s) => s.settings);
   const setSettings = useAppStore((s) => s.setSettings);
+  const isThinking = useAppStore((s) => s.isThinking);
 
   const isClaudeMode = settings.apiKey !== '';
 
   return (
     <header className="header">
       <div className="wordmark">
-        <SkyteOrb size="sm" />
+        <SkyteOrb size="sm" active={isThinking} />
         Skyte AI
         <span className={`mode-badge${isClaudeMode ? ' claude' : ''}`}>
           {isClaudeMode ? t('mode.claude') : t('mode.demo')}

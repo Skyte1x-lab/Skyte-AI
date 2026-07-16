@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import Header from './components/Header';
+import ToastStack from './components/ToastStack';
 import ChatView from './components/chat/ChatView';
 import DashboardView from './components/dashboard/DashboardView';
 import SettingsView from './components/settings/SettingsView';
@@ -21,6 +22,7 @@ export default function App() {
         {activeView === 'dashboard' && <DashboardView />}
         {activeView === 'settings' && <SettingsView />}
       </main>
+      <ToastStack />
     </div>
   );
 }
