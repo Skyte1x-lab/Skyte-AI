@@ -79,19 +79,19 @@ h1, h2, h3 {
 }
 
 .skyte-orb.sm {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
 }
 
 .skyte-orb.md {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
 }
 
 .skyte-orb.lg {
-  width: 96px;
-  height: 96px;
-  margin: 0 auto var(--space-3);
+  width: clamp(180px, 30vw, 340px);
+  height: clamp(180px, 30vw, 340px);
+  margin: 0 auto var(--space-2);
 }
 
 .orb-node {
@@ -107,6 +107,18 @@ h1, h2, h3 {
   animation: edge-pulse 2.6s ease-in-out infinite;
 }
 
+.orb-signal {
+  fill: #fff;
+  opacity: 0;
+  filter: drop-shadow(0 0 2px rgba(var(--color-accent-rgb), 1))
+    drop-shadow(0 0 6px rgba(var(--color-accent-rgb), 0.85));
+  offset-rotate: 0deg;
+  animation-name: signal-travel;
+  animation-duration: var(--signal-duration, 2.4s);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
 @keyframes node-pulse {
   0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
@@ -117,6 +129,13 @@ h1, h2, h3 {
   50% { opacity: 0.55; }
 }
 
+@keyframes signal-travel {
+  0% { offset-distance: 0%; opacity: 0; }
+  8% { opacity: 1; }
+  92% { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+
 .skyte-orb.active .orb-node {
   animation-name: node-pulse-active;
   animation-duration: 0.9s;
@@ -125,6 +144,10 @@ h1, h2, h3 {
 .skyte-orb.active .orb-edge {
   animation-name: edge-pulse-active;
   animation-duration: 0.9s;
+}
+
+.skyte-orb.active .orb-signal {
+  animation-duration: calc(var(--signal-duration, 2.4s) / 3.2);
 }
 
 @keyframes node-pulse-active {
@@ -250,7 +273,21 @@ h1, h2, h3 {
   margin: auto;
   text-align: center;
   color: var(--color-text-muted);
-  max-width: 480px;
+  max-width: 560px;
+  position: relative;
+}
+
+.chat-empty::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  width: clamp(220px, 40vw, 460px);
+  height: clamp(220px, 40vw, 460px);
+  transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(var(--color-accent-rgb), 0.16) 0%, rgba(var(--color-accent-rgb), 0) 70%);
+  pointer-events: none;
+  z-index: -1;
 }
 
 .chat-empty h2 {
