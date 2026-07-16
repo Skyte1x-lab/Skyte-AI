@@ -89,8 +89,8 @@ h1, h2, h3 {
 }
 
 .skyte-orb.lg {
-  width: clamp(180px, 30vw, 340px);
-  height: clamp(180px, 30vw, 340px);
+  width: clamp(220px, 46vw, 560px);
+  height: clamp(220px, 46vw, 560px);
   margin: 0 auto var(--space-2);
 }
 
@@ -273,7 +273,7 @@ h1, h2, h3 {
   margin: auto;
   text-align: center;
   color: var(--color-text-muted);
-  max-width: 560px;
+  max-width: 680px;
   position: relative;
 }
 
@@ -282,8 +282,8 @@ h1, h2, h3 {
   position: absolute;
   top: -40px;
   left: 50%;
-  width: clamp(220px, 40vw, 460px);
-  height: clamp(220px, 40vw, 460px);
+  width: clamp(280px, 56vw, 680px);
+  height: clamp(280px, 56vw, 680px);
   transform: translateX(-50%);
   background: radial-gradient(circle, rgba(var(--color-accent-rgb), 0.16) 0%, rgba(var(--color-accent-rgb), 0) 70%);
   pointer-events: none;

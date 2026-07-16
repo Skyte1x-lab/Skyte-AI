@@ -6,53 +6,59 @@ interface Props {
   active?: boolean;
 }
 
-// An organic neuron cluster: [x, y] positions in a 0-100 viewBox.
-const NODES: [number, number][] = [
-  [50, 8],
-  [28, 20],
-  [72, 20],
-  [12, 40],
-  [50, 32],
-  [88, 40],
-  [24, 55],
-  [50, 52],
-  [76, 55],
-  [14, 72],
-  [50, 74],
-  [86, 72],
-  [50, 95],
-];
+const NODE_COUNT = 30;
+const NEIGHBORS_PER_NODE = 3;
+const HUB_RADIUS = 14; // distance from center (50,50) below which a node is a bigger "hub" neuron
 
-// Bigger "hub" neurons read better at large scale.
-const HUB_NODES = new Set([4, 7, 10]);
+/** Small deterministic PRNG so the layout is stable across renders/reloads. */
+function seededRandom(seed: number) {
+  let s = seed;
+  return () => {
+    s |= 0;
+    s = (s + 0x6d2b79f5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
-// Synapses connecting nearby neurons.
-const EDGES: [number, number][] = [
-  [0, 1],
-  [0, 2],
-  [1, 2],
-  [1, 3],
-  [1, 4],
-  [2, 4],
-  [2, 5],
-  [3, 4],
-  [3, 6],
-  [4, 5],
-  [4, 7],
-  [5, 8],
-  [6, 7],
-  [6, 9],
-  [6, 10],
-  [7, 8],
-  [7, 10],
-  [7, 11],
-  [8, 11],
-  [9, 10],
-  [9, 12],
-  [10, 11],
-  [10, 12],
-  [11, 12],
-];
+function buildNodes(): [number, number][] {
+  const rand = seededRandom(1337);
+  const nodes: [number, number][] = [];
+  for (let i = 0; i < NODE_COUNT; i++) {
+    const angle = rand() * Math.PI * 2;
+    const radius = Math.sqrt(rand()) * 44;
+    const x = 50 + Math.cos(angle) * radius;
+    const y = 50 + Math.sin(angle) * radius * 1.12;
+    nodes.push([Math.max(4, Math.min(96, x)), Math.max(4, Math.min(96, y))]);
+  }
+  return nodes;
+}
+
+function buildEdges(nodes: [number, number][]): [number, number][] {
+  const seen = new Set<string>();
+  const edges: [number, number][] = [];
+  nodes.forEach((a, i) => {
+    const nearest = nodes
+      .map((b, j) => ({ j, d: i === j ? Infinity : Math.hypot(a[0] - b[0], a[1] - b[1]) }))
+      .sort((p, q) => p.d - q.d)
+      .slice(0, NEIGHBORS_PER_NODE);
+    nearest.forEach(({ j }) => {
+      const key = i < j ? `${i}-${j}` : `${j}-${i}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        edges.push(i < j ? [i, j] : [j, i]);
+      }
+    });
+  });
+  return edges;
+}
+
+const NODES = buildNodes();
+const EDGES = buildEdges(NODES);
+const HUBS = new Set(
+  NODES.map((_, i) => i).filter((i) => Math.hypot(NODES[i][0] - 50, NODES[i][1] - 50) < HUB_RADIUS),
+);
 
 export default function SkyteOrb({ size = 'md', active = false }: Props) {
   const rawId = useId().replace(/[^a-zA-Z0-9]/g, '');
@@ -66,7 +72,7 @@ export default function SkyteOrb({ size = 'md', active = false }: Props) {
     >
       <defs>
         <filter id={filterId} x="-80%" y="-80%" width="260%" height="260%">
-          <feGaussianBlur stdDeviation="2.6" result="blur" />
+          <feGaussianBlur stdDeviation="2.2" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
@@ -85,20 +91,20 @@ export default function SkyteOrb({ size = 'md', active = false }: Props) {
               y1={y1}
               x2={x2}
               y2={y2}
-              style={{ animationDelay: `${(i % 8) * 0.18}s` }}
+              style={{ animationDelay: `${(i % 8) * 0.16}s` }}
             />
           );
         })}
         {EDGES.map(([a, b], i) => {
           const [x1, y1] = NODES[a];
           const [x2, y2] = NODES[b];
-          const duration = 1.8 + (i % 5) * 0.3;
-          const delay = (i * 0.55) % 3.2;
+          const duration = 1.6 + (i % 6) * 0.26;
+          const delay = (i * 0.47) % 3.6;
           return (
             <circle
               key={`s${i}`}
               className="orb-signal"
-              r={1.6}
+              r={1.4}
               style={{
                 offsetPath: `path('M ${x1} ${y1} L ${x2} ${y2}')`,
                 ['--signal-duration' as string]: `${duration}s`,
@@ -113,8 +119,8 @@ export default function SkyteOrb({ size = 'md', active = false }: Props) {
             className="orb-node"
             cx={x}
             cy={y}
-            r={HUB_NODES.has(i) ? 5.5 : 3.4}
-            style={{ animationDelay: `${(i % 9) * 0.22}s` }}
+            r={HUBS.has(i) ? 5 : 3}
+            style={{ animationDelay: `${(i % 9) * 0.2}s` }}
           />
         ))}
       </g>
