@@ -17,9 +17,15 @@ export const translations = {
     'chat.placeholder': 'Schreib Skyte AI eine Nachricht…',
     'chat.send': 'Senden',
     'chat.micTooltip': 'Spracheingabe starten',
-    'chat.micUnsupported': 'Spracheingabe benötigt Chrome oder Edge',
+    'chat.micTooltipWhisper': 'Spracheingabe starten (lokales KI-Modell, kein Chrome nötig)',
+    'chat.micUnsupported': 'Spracheingabe wird von diesem Browser nicht unterstützt',
     'chat.micDenied':
       'Mikrofonzugriff verweigert. Bitte erlaube das Mikrofon in den Browser-Einstellungen.',
+    'chat.micTranscribing': 'Wird erkannt…',
+    'chat.micLoadingModel': 'Sprachmodell wird geladen ({percent} %)…',
+    'chat.micError': 'Spracherkennung fehlgeschlagen. Bitte versuch es erneut.',
+    'chat.micWhisperError':
+      'Das Sprachmodell konnte nicht geladen werden — prüfe deine Internetverbindung und versuch es erneut.',
     'chat.listening': 'Ich höre zu…',
     'chat.viaVoice': 'per Sprache',
     'chat.clear': 'Chat leeren',
@@ -146,9 +152,15 @@ export const translations = {
     'chat.placeholder': 'Message Skyte AI…',
     'chat.send': 'Send',
     'chat.micTooltip': 'Start voice input',
-    'chat.micUnsupported': 'Voice input requires Chrome or Edge',
+    'chat.micTooltipWhisper': 'Start voice input (local AI model, no Chrome needed)',
+    'chat.micUnsupported': 'Voice input is not supported by this browser',
     'chat.micDenied':
       'Microphone access denied. Please allow the microphone in your browser settings.',
+    'chat.micTranscribing': 'Transcribing…',
+    'chat.micLoadingModel': 'Loading speech model ({percent}%)…',
+    'chat.micError': 'Speech recognition failed. Please try again.',
+    'chat.micWhisperError':
+      'The speech model could not be loaded — check your internet connection and try again.',
     'chat.listening': 'Listening…',
     'chat.viaVoice': 'via voice',
     'chat.clear': 'Clear chat',

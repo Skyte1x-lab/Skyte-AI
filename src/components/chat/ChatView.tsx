@@ -74,7 +74,7 @@ export default function ChatView() {
   return (
     <div className="chat-view-wrap">
       <NeuralBackground
-        active={isThinking || speech.isListening}
+        active={isThinking || speech.isListening || speech.isTranscribing}
         messageCount={chatHistory.length}
       />
       <div className="chat-view">
@@ -120,13 +120,21 @@ export default function ChatView() {
             {t('chat.micDenied')}
           </p>
         )}
+        {speech.error === 'other' && (
+          <p className="empty-hint" style={{ textAlign: 'center' }}>
+            {speech.engine === 'whisper' ? t('chat.micWhisperError') : t('chat.micError')}
+          </p>
+        )}
 
         <ChatInput
           disabled={isThinking}
           onSend={(text) => sendMessage(text, 'text')}
           micSupported={speech.isSupported}
           isListening={speech.isListening}
+          isTranscribing={speech.isTranscribing}
+          modelLoadProgress={speech.modelLoadProgress}
           interimTranscript={speech.interimTranscript}
+          engine={speech.engine}
           onMicClick={handleMicClick}
         />
       </div>

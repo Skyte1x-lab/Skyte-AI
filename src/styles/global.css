@@ -487,6 +487,22 @@ h1, h2, h3 {
   animation: pulse 1.2s infinite;
 }
 
+.mic-btn.busy {
+  --pulse-color-rgb: var(--color-accent-rgb);
+  animation: pulse 1.2s infinite;
+  cursor: wait;
+}
+
+.mic-btn.busy .mic-icon {
+  display: inline-block;
+  animation: mic-busy-spin 1.6s linear infinite;
+}
+
+@keyframes mic-busy-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 @keyframes pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(var(--pulse-color-rgb), 0.4); }
   50% { box-shadow: 0 0 0 8px rgba(var(--pulse-color-rgb), 0); }
